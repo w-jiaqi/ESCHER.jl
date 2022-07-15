@@ -1,0 +1,8 @@
+name = "ESCHER"
+uuid = "8352d375-fc30-4b16-9ec5-e70b12d7d3f1"
+authors = ["WhiffleFish <tylertronics@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+CounterfactualRegret = "9fefe0b7-a0d5-4e12-a8ed-3472cccdfc49"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
