@@ -1,0 +1,5 @@
+[deps]
+CounterfactualRegret = "9fefe0b7-a0d5-4e12-a8ed-3472cccdfc49"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
