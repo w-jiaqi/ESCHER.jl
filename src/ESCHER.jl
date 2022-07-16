@@ -9,7 +9,7 @@ export ESCHERSolver
 
 include("solver.jl")
 include("buffer.jl")
-include("trajectory.jl")
+include("traverse.jl")
 include("train.jl")
 
 end # module

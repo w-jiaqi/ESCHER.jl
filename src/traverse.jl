@@ -6,25 +6,24 @@ function value_traverse(sol::ESCHERSolver, h, p)
         return utility(game, 1, h) # trained on p1 utilities (assuming zero sum)
     elseif iszero(current_player)
         A = chance_actions(game, h)
-        a = rand(A)
+        a = rand(sol.rng, A)
         h′ = next_hist(game, h, a)
         return value_traverse(sol, h′, p)
     end
 
     I = vectorized(game, infokey(game, h))
     A = actions(game, h)
-    σ = regret_match_strategy(sol, I)
 
     if current_player == p
         π̃ = sol.sample_policy(I)
         σ = regret_match_strategy(sol, I)
-        a_idx = weighted_sample(π̃)
-        q = value(sol, infokey(game, h))
+        a_idx = weighted_sample(sol.rng, π̃)
+        q = value(sol, I)
         h′ = next_hist(game, h, A[a_idx])
         q[a_idx] = value_traverse(sol, h′, p)*(σ[i]/π̃[i])
         push!(sol.value_buffer, I, q)
 
-        # bootstrapping?
+        # bootstrapping eh?
         # v = 0.0
         # for i ∈ eachindex(q)
         #     v += σ[i]*q[i]
@@ -32,11 +31,47 @@ function value_traverse(sol::ESCHERSolver, h, p)
         # return v
         return q[a_idx]
     else
-        q = value(sol, I)
         π_ni = regret_match_strategy(sol, I)
-        a_idx = weighted_sample(π_ni)
+        a_idx = weighted_sample(sol.rng, π_ni)
         h′ = next_hist(game, h, A[a_idx])
         return value_traverse(sol, h′, p)
+    end
+end
+
+function regret_traverse(sol::ESCHERSolver, h, p)
+    (;game, ϵ) = sol
+    current_player = player(game, h)
+
+    if isterminal(game, h)
+        return utility(game, p, h) # trained on p1 utilities (assuming zero sum)
+    elseif iszero(current_player)
+        A = chance_actions(game, h)
+        a = rand(sol.rng, A)
+        h′ = next_hist(game, h, a)
+        return regret_traverse(sol, h′, p)
+    end
+
+    I = vectorized(game, infokey(game, h))
+    A = actions(game, h)
+
+    if current_player == p
+        π̃ = sol.sample_policy(I)
+        σ = regret_match_strategy(sol, I)
+        a_idx = weighted_sample(sol.rng, π̃)
+        q = value(sol, I)
+        v = 0.0
+        for i in eachindex(σ)
+            v += σ[i]*q[i]
+        end
+        r̂ = q .-= v
+        h′ = next_hist(game, h, A[a_idx])
+        buffer_regret!(sol, p, I, r̂)
+        return regret_traverse(sol, h′, p)
+    else
+        π_ni = regret_match_strategy(sol, I)
+        a_idx = weighted_sample(sol.rng, π_ni)
+        h′ = next_hist(game, h, A[a_idx])
+        return regret_traverse(sol, h′, p)
     end
 end
 
