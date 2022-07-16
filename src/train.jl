@@ -1,7 +1,7 @@
 function CFR.train!(sol::ESCHERSolver, T::Integer)
     initialize!.(sol.regret)
 
-    for t ∈ 1:T
+    @showprogress for t ∈ 1:T
         traverse_value!(sol)
         train_value!(sol)
         for p ∈ 1:2
@@ -11,13 +11,19 @@ function CFR.train!(sol::ESCHERSolver, T::Integer)
     end
 end
 
+function initialize!(nn, init=Flux.glorot_normal)
+    for p in Flux.params(nn)
+        p .= init(size(p)...)
+    end
+end
+
 """
 Make a bunch of MC runs and train value net
 """
 function traverse_value!(sol)
     h0 = initialhist(sol.game)
     for p ∈ 1:2
-        for i ∈ 1:sol.value_iters
+        for i ∈ 1:sol.trajectories
             value_traverse(sol, h0, p)
         end
     end
@@ -28,12 +34,10 @@ function train_value!(sol)
     train_net!(sol.value, buff.x, buff.y, sol.value_batch_size, sol.value_batches, deepcopy(sol.optimizer))
 end
 
-function traverse_regret!(sol)
+function traverse_regret!(sol, p)
     h0 = initialhist(sol.game)
-    for p ∈ 1:2
-        for _ ∈ 1:sol.trajectories
-            regret_traverse(sol, h0, p)
-        end
+    for _ ∈ 1:sol.trajectories
+        regret_traverse(sol, h0, p)
     end
 end
 
@@ -80,4 +84,4 @@ struct UniformPolicy{T}
     UniformPolicy(n::Int) = new{Float64}(fill(inv(n),n))
 end
 
-(p::UniformPolicy)(::Any) = v
+(p::UniformPolicy)(::Any) = p.v

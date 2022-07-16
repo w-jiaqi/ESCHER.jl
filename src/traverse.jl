@@ -1,5 +1,5 @@
 function value_traverse(sol::ESCHERSolver, h, p)
-    (;game, ϵ) = sol
+    (;game) = sol
     current_player = player(game, h)
 
     if isterminal(game, h)
@@ -16,11 +16,11 @@ function value_traverse(sol::ESCHERSolver, h, p)
 
     if current_player == p
         π̃ = sol.sample_policy(I)
-        σ = regret_match_strategy(sol, I)
+        σ = regret_match_strategy(sol, p, I)
         a_idx = weighted_sample(sol.rng, π̃)
-        q = value(sol, I)
+        q = value(sol, p, I)
         h′ = next_hist(game, h, A[a_idx])
-        q[a_idx] = value_traverse(sol, h′, p)*(σ[i]/π̃[i])
+        q[a_idx] = value_traverse(sol, h′, p)*(σ[a_idx]/π̃[a_idx])
         push!(sol.value_buffer, I, q)
 
         # bootstrapping eh?
@@ -31,7 +31,7 @@ function value_traverse(sol::ESCHERSolver, h, p)
         # return v
         return q[a_idx]
     else
-        π_ni = regret_match_strategy(sol, I)
+        π_ni = regret_match_strategy(sol, p, I)
         a_idx = weighted_sample(sol.rng, π_ni)
         h′ = next_hist(game, h, A[a_idx])
         return value_traverse(sol, h′, p)
@@ -39,7 +39,7 @@ function value_traverse(sol::ESCHERSolver, h, p)
 end
 
 function regret_traverse(sol::ESCHERSolver, h, p)
-    (;game, ϵ) = sol
+    (;game) = sol
     current_player = player(game, h)
 
     if isterminal(game, h)
@@ -56,9 +56,9 @@ function regret_traverse(sol::ESCHERSolver, h, p)
 
     if current_player == p
         π̃ = sol.sample_policy(I)
-        σ = regret_match_strategy(sol, I)
+        σ = regret_match_strategy(sol, p, I)
         a_idx = weighted_sample(sol.rng, π̃)
-        q = value(sol, I)
+        q = value(sol, p, I)
         v = 0.0
         for i in eachindex(σ)
             v += σ[i]*q[i]
@@ -68,11 +68,25 @@ function regret_traverse(sol::ESCHERSolver, h, p)
         buffer_regret!(sol, p, I, r̂)
         return regret_traverse(sol, h′, p)
     else
-        π_ni = regret_match_strategy(sol, I)
+        π_ni = regret_match_strategy(sol, p, I)
         a_idx = weighted_sample(sol.rng, π_ni)
         h′ = next_hist(game, h, A[a_idx])
         return regret_traverse(sol, h′, p)
     end
+end
+
+
+function regret_match_strategy(sol, p, I)
+    r = regret(sol, p, I)
+    s = 0.0
+    for i ∈ eachindex(r)
+        if r[i] > 0.0
+            s += r[i]
+        else
+            r[i] = 0.0
+        end
+    end
+    return s > 0.0 ? (r ./= s) : fill!(r,1/length(r))
 end
 
 function weighted_sample(rng::Random.AbstractRNG, σ::AbstractVector)

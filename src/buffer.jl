@@ -21,8 +21,8 @@ function Base.push!(mem::MemBuffer{X,Y}, x::X, y::Y) where {X,Y}
     else
         j = rand(1:i)
         if j ≤ k
-            Mπ.x[j] = x
-            Mπ.y[j] = y
+            mem.x[j] = x
+            mem.y[j] = y
         end
     end
 end

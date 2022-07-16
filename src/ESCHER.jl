@@ -2,6 +2,7 @@ module ESCHER
 
 using CounterfactualRegret
 const CFR = CounterfactualRegret
+using ProgressMeter
 using Random
 using Flux
 
