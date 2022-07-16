@@ -1,13 +1,16 @@
-function CFR.train!(sol::ESCHERSolver, T::Integer)
+function CFR.train!(sol::ESCHERSolver, T::Integer; show_progress::Bool=true, cb=()->())
+    prog = Progress(T; enabled=show_progress)
     initialize!.(sol.regret)
-
-    @showprogress for t ∈ 1:T
+    for t ∈ 1:T
+        empty!(sol.value_buffer)
         traverse_value!(sol)
         train_value!(sol)
         for p ∈ 1:2
             traverse_regret!(sol, p)
             train_regret!(sol, p)
         end
+        cb()
+        next!(prog)
     end
 end
 
@@ -44,6 +47,11 @@ end
 function train_regret!(sol, p)
     buff = sol.regret_buffer[p]
     train_net!(sol.regret[p], buff.x, buff.y, sol.regret_batch_size, sol.regret_batches, deepcopy(sol.optimizer))
+end
+
+function train_strategy!(sol)
+    buff = sol.strategy_buffer
+    train_net!(sol.strategy, buff.x, buff.y, sol.strategy_batch_size, sol.strategy_batches, deepcopy(sol.optimizer))
 end
 
 function train_net!(net, x_data, y_data, batch_size, n_batches, opt)

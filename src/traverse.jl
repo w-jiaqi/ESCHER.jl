@@ -66,6 +66,7 @@ function regret_traverse(sol::ESCHERSolver, h, p)
         r̂ = q .-= v
         h′ = next_hist(game, h, A[a_idx])
         buffer_regret!(sol, p, I, r̂)
+        buffer_strategy!(sol, I, σ)
         return regret_traverse(sol, h′, p)
     else
         π_ni = regret_match_strategy(sol, p, I)

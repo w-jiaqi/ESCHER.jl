@@ -1,6 +1,7 @@
 module ESCHER
 
 using CounterfactualRegret
+using RecipesBase
 const CFR = CounterfactualRegret
 using ProgressMeter
 using Random
@@ -12,5 +13,6 @@ include("solver.jl")
 include("buffer.jl")
 include("traverse.jl")
 include("train.jl")
+include("callback.jl")
 
 end # module

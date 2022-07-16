@@ -1,4 +1,5 @@
-Base.@kwdef struct ESCHERSolver{G,V,R,S,VB,RB,SB,SP,OPT,RNG<:AbstractRNG}
+struct NullInfoState <: CounterfactualRegret.AbstractInfoState end
+Base.@kwdef struct ESCHERSolver{G,V,R,S,VB,RB,SB,SP,OPT,RNG<:AbstractRNG} <: CFR.AbstractCFRSolver{Nothing,G,NullInfoState}
     game::G
     trajectories::Int = 1_000
     value_batch_size::Int = 256
@@ -87,7 +88,7 @@ end
 
 value(sol::ESCHERSolver, i, x) = isone(i) ? sol.value(x) : -sol.value(x)
 regret(sol::ESCHERSolver, p, x) = sol.regret[p](x)
-strategy(sol::ESCHERSolver, x) = sol.strategy(x)
+CFR.strategy(sol::ESCHERSolver, x) = sol.strategy(vectorized(sol.game, x))
 
 """
 Infokey type of game may not be in vectorized form.
