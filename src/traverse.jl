@@ -60,7 +60,7 @@ function regret_traverse(sol::ESCHERSolver, h, p)
         a_idx = weighted_sample(sol.rng, π̃)
         q = value(sol, p, I)
         v = 0.0
-        for i in eachindex(σ)
+        for i in eachindex(σ,q)
             v += σ[i]*q[i]
         end
         r̂ = q .-= v
