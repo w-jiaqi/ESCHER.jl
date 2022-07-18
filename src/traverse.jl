@@ -3,7 +3,7 @@ function value_traverse(sol::ESCHERSolver, h, p)
     current_player = player(game, h)
 
     if isterminal(game, h)
-        return utility(game, 1, h) # trained on p1 utilities (assuming zero sum)
+        return Float32(utility(game, 1, h)) # trained on p1 utilities (assuming zero sum)
     elseif iszero(current_player)
         A = chance_actions(game, h)
         a = rand(sol.rng, A)
@@ -79,15 +79,15 @@ end
 
 function regret_match_strategy(sol, p, I)
     r = regret(sol, p, I)
-    s = 0.0
+    s = 0.0f0
     for i ∈ eachindex(r)
-        if r[i] > 0.0
+        if r[i] > 0.0f0
             s += r[i]
         else
-            r[i] = 0.0
+            r[i] = 0.0f0
         end
     end
-    return s > 0.0 ? (r ./= s) : fill!(r,1/length(r))
+    return s > 0.0f0 ? (r ./= s) : fill!(r,1/length(r))
 end
 
 function weighted_sample(rng::Random.AbstractRNG, σ::AbstractVector)

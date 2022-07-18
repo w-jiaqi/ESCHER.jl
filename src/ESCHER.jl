@@ -14,5 +14,6 @@ include("buffer.jl")
 include("traverse.jl")
 include("train.jl")
 include("callback.jl")
+include("fitting.jl")
 
 end # module

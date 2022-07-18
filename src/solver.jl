@@ -42,9 +42,9 @@ function ESCHERSolver(game::Game{H,K};
 
     value = if isnothing(value)
         Chain(
-            Dense(in_size, 16, sigmoid),
-            Dense(16, 16, sigmoid),
-            Dense(16, out_size, sigmoid)
+            Dense(in_size, 32, sigmoid),
+            Dense(32, 32, sigmoid),
+            Dense(32, out_size)
         )
     else
         value
@@ -54,8 +54,14 @@ function ESCHERSolver(game::Game{H,K};
     value_buffer = MemBuffer{VK,val_ret}(value_buffer_size)
 
     regret = if isnothing(regret)
-        regret_net = Chain(Dense(in_size, 16, sigmoid), Dense(16,out_size))
+        regret_net = Chain(
+            Dense(in_size, 32, sigmoid),
+            Dense(32, 32, sigmoid),
+            Dense(32, out_size)
+        )
         (regret_net, deepcopy(regret_net))
+    elseif !isa(regret, Tuple)
+        (regret, deepcopy(regret))
     else
         regret
     end
@@ -65,9 +71,9 @@ function ESCHERSolver(game::Game{H,K};
 
     strategy = if isnothing(strategy)
         Chain(
-            Dense(in_size, 16, sigmoid),
-            Dense(16, 16, sigmoid),
-            Dense(16, out_size, sigmoid),
+            Dense(in_size, 32, sigmoid),
+            Dense(32, 32, sigmoid),
+            Dense(32, out_size),
             softmax)
     else
         strategy

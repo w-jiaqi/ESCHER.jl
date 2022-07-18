@@ -1,7 +1,7 @@
 function CFR.train!(sol::ESCHERSolver, T::Integer; show_progress::Bool=true, cb=()->())
     prog = Progress(T; enabled=show_progress)
-    initialize!.(sol.regret)
     for t ∈ 1:T
+        initialize!.(sol.regret)
         empty!(sol.value_buffer)
         traverse_value!(sol)
         train_value!(sol)
@@ -54,6 +54,8 @@ function train_strategy!(sol)
     train_net!(sol.strategy, buff.x, buff.y, sol.strategy_batch_size, sol.strategy_batches, deepcopy(sol.optimizer))
 end
 
+mse(X::AbstractMatrix,Y::AbstractMatrix) = sum(abs2, Y .- X)/size(X,2)
+
 function train_net!(net, x_data, y_data, batch_size, n_batches, opt)
     isempty(x_data) && return nothing
     input_size = length(first(x_data))
@@ -71,7 +73,7 @@ function train_net!(net, x_data, y_data, batch_size, n_batches, opt)
         fillmat!(Y, y_data, sample_idxs)
 
         gs = gradient(p) do
-            Flux.mse(net(X),Y)
+            mse(net(X),Y)
         end
 
         Flux.update!(opt, p, gs)
