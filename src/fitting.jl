@@ -56,14 +56,18 @@ end
 LossCache(r::Vector{T}) where T = LossCache(zero(T), zero(r), 0.0f0)
 LossCache(r::AbstractVector{T}) where T = LossCache(zero(T), zero(Vector(r)), 0.0f0)
 
+conv2vec(x::AbstractVector) = x
+conv2vec(x::Number) = [x]
+
 """
 Lowest possible MSE
 """
 function lower_limit_loss(X::Vector{INFO},Y) where INFO
 
-    d = Dict{INFO,LossCache}()
+    d = Dict{INFO,LossCache{Float32}}()
 
     for (x,y) in zip(X,Y)
+        y = conv2vec(y)
         lc = get!(d, x) do # txxsum, txsum, tsum
             LossCache(y)
         end
@@ -103,3 +107,31 @@ function optimality_distance(net, x_data, y_data)
 end
 
 optimality_distance(net, mem::MemBuffer) = optimality_distance(net, mem.x, mem.y)
+
+struct TrainingRun
+    loss::Vector{Float64}
+    lower_limit::Float64
+end
+
+function training_run(net, mem::MemBuffer, bs, n_b, opt; show_progress::Bool = true, init=true)
+    init && initialize!(net)
+    loss = train_net_tracked!(net, mem.x, mem.y, bs, n_b, opt; show_progress)
+    ll = lower_limit_loss(mem)
+    return TrainingRun(loss, ll)
+end
+
+Base.getindex(t::TrainingRun, I...) = t.loss[I...]
+
+@recipe function f(t::TrainingRun)
+    @series begin
+        label --> "loss"
+        t.loss
+    end
+    @series begin
+        seriestype := :hline
+        label --> "lower limit"
+        color --> :red
+        ls --> :dash
+        [t.lower_limit]
+    end
+end
