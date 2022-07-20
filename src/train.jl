@@ -2,6 +2,7 @@ function CFR.train!(sol::ESCHERSolver, T::Integer; show_progress::Bool=true, cb=
     prog = Progress(T; enabled=show_progress)
     for t ∈ 1:T
         initialize!.(sol.regret)
+        initialize!(sol.value)
         empty!(sol.value_buffer)
         traverse_value!(sol)
         train_value!(sol)
@@ -82,9 +83,17 @@ function train_net!(net, x_data, y_data, batch_size, n_batches, opt)
 end
 
 
-function fillmat!(mat::AbstractMatrix, vecvec::AbstractVector, idxs)
+function fillmat!(mat::AbstractMatrix, vecvec::Vector{<:AbstractVector}, idxs)
     @inbounds for i in axes(mat, 2)
         mat[:,i] .= vecvec[idxs[i]]
+    end
+    return mat
+end
+
+function fillmat!(mat::AbstractMatrix, vec::Vector{<:Number}, idxs)
+    @assert isone(size(mat,1))
+    @inbounds for i in axes(mat, 2)
+        mat[1,i] = vec[idxs[i]]
     end
     return mat
 end

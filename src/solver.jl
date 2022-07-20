@@ -19,6 +19,7 @@ Base.@kwdef struct ESCHERSolver{G,V,R,S,VB,RB,SB,SP,OPT,RNG<:AbstractRNG} <: CFR
     strategy_buffer::SB
     sample_policy::SP
     optimizer::OPT = Adam(1e-3)
+    ϵ::Float64 = 0.3
     rng::RNG = Random.default_rng()
 end
 
@@ -32,26 +33,29 @@ function ESCHERSolver(game::Game{H,K};
     kwargs...
     ) where {H,K}
 
-    I0 = vectorized(game,infokey(game,initialhist(game)))
+    h0 = initialhist(game)
+    I0 = vectorized(game,infokey(game,h0))
+    vh = vectorized(game,h0)
+    VH = typeof(vh)
     VK = typeof(I0)
-    # VK = first(Base.return_types(vectorized, (typeof(game),K)))
     @assert VK <: AbstractVector "`vectorized(::Game{H,K}, ::K)` should return vector"
-    in_size, out_size = in_out_sizes(game)
+    @assert VH <: AbstractVector "`vectorized(::Game{H,K}, ::K)` should return vector"
 
+    in_size, out_size = in_out_sizes(game)
     sample_policy = UniformPolicy(out_size)
 
     value = if isnothing(value)
         Chain(
             Dense(in_size, 32, sigmoid),
             Dense(32, 32, sigmoid),
-            Dense(32, out_size)
+            Dense(32, 1)
         )
     else
         value
     end
 
-    val_ret = typeof(value(I0))
-    value_buffer = MemBuffer{VK,val_ret}(value_buffer_size)
+    val_ret = typeof(value(vh))
+    value_buffer = MemBuffer{VH,Float32}(value_buffer_size)
 
     regret = if isnothing(regret)
         regret_net = Chain(
