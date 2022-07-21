@@ -11,13 +11,13 @@ function value_traverse(sol::ESCHERSolver, h, p)
         h′= next_hist(game, h, a)
         v̂ = value_traverse(sol, h′, p)
 
-        h_vec = vectorized(game, h)
+        h_vec = vectorized_hist(game, h)
         push!(sol.value_buffer, h_vec, Float32(v̂))
 
         return v̂
     end
 
-    I = vectorized(game, infokey(game, h))
+    I = vectorized_info(game, infokey(game, h))
     A = actions(game, h)
 
     if current_player == p
@@ -28,7 +28,7 @@ function value_traverse(sol::ESCHERSolver, h, p)
         h′ = next_hist(game, h, A[a_idx])
         v̂ = value_traverse(sol, h′, p)#*(σ[a_idx]/π̃[a_idx])
 
-        h_vec = vectorized(game, h)
+        h_vec = vectorized_hist(game, h)
 
         push!(sol.value_buffer, h_vec, Float32(v̂))
 
@@ -41,7 +41,7 @@ function value_traverse(sol::ESCHERSolver, h, p)
         a_idx = weighted_sample(sol.rng, π_ni)
         h′ = next_hist(game, h, A[a_idx])
         v̂ = value_traverse(sol, h′, p)#*(π_ni[a_idx] / π̃[a_idx])
-        h_vec = vectorized(game, h)
+        h_vec = vectorized_hist(game, h)
         push!(sol.value_buffer, h_vec, Float32(v̂))
         return v̂
     end
@@ -61,7 +61,7 @@ function regret_traverse(sol::ESCHERSolver, h, p)
         return regret_traverse(sol, h′, p)
     end
 
-    I = vectorized(game, infokey(game, h))
+    I = vectorized_info(game, infokey(game, h))
     A = actions(game, h)
 
     if current_player == p
@@ -94,7 +94,7 @@ function child_value(sol, p, h, a)
     return if isterminal(sol.game, h′)
         utility(sol.game, p, h′)
     else
-        only(value(sol, p, vectorized(sol.game,h′)))
+        value(sol, p, vectorized_hist(sol.game,h′))
     end
 end
 

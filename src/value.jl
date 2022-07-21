@@ -11,7 +11,7 @@ function exact_value(sol, h)
         end
         return v/length(A)
     else
-        I = vectorized(game, infokey(game, h))
+        I = vectorized_info(game, infokey(game, h))
         σ = regret_match_strategy(sol, p, I)
         A = actions(game, h)
         v = 0.0

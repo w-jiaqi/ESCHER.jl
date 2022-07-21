@@ -34,12 +34,12 @@ function ESCHERSolver(game::Game{H,K};
     ) where {H,K}
 
     h0 = initialhist(game)
-    I0 = vectorized(game,infokey(game,h0))
-    vh = vectorized(game,h0)
+    I0 = vectorized_info(game,infokey(game,h0))
+    vh = vectorized_hist(game,h0)
     VH = typeof(vh)
     VK = typeof(I0)
-    @assert VK <: AbstractVector "`vectorized(::Game{H,K}, ::K)` should return vector"
-    @assert VH <: AbstractVector "`vectorized(::Game{H,K}, ::K)` should return vector"
+    @assert VK <: AbstractVector "`vectorized_info(::Game{H,K}, ::K)` should return vector"
+    @assert VH <: AbstractVector "`vectorized_hist(::Game{H,K}, ::H)` should return vector"
 
     in_size, out_size = in_out_sizes(game)
     sample_policy = UniformPolicy(out_size)
@@ -96,18 +96,9 @@ function ESCHERSolver(game::Game{H,K};
         regret_buffer, strategy_buffer, kwargs...)
 end
 
-value(sol::ESCHERSolver, i, x) = isone(i) ? sol.value(x) : -sol.value(x)
+value(sol::ESCHERSolver, i, x) = isone(i) ? only(sol.value(x)) : -only(sol.value(x))
 regret(sol::ESCHERSolver, p, x) = sol.regret[p](x)
-CFR.strategy(sol::ESCHERSolver, x) = sol.strategy(vectorized(sol.game, x))
-
-"""
-Infokey type of game may not be in vectorized form.
-`vectorized(game::Game, I::infokeytype(game))` returns the original key type
-in vectorized form to be pushed through a neural network.
-"""
-function vectorized end
-
-vectorized(game::Game, I) = I
+CFR.strategy(sol::ESCHERSolver, x) = sol.strategy(vectorized_info(sol.game, x))
 
 function buffer_regret!(sol, p, s, r̂)
     push!(sol.regret_buffer[p], s, r̂)
@@ -119,7 +110,7 @@ end
 
 function in_out_sizes(game::Game)
     h0 = initialhist(game)
-    k = vectorized(game, infokey(game, h0))
+    k = vectorized_info(game, infokey(game, h0))
     A = actions(game, h0)
     in_size = length(k)
     out_size = length(A)
