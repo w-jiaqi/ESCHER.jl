@@ -86,7 +86,7 @@ function traverse(sol::TabularESCHERSolver, h, p)
         σ = regret_match_strategy(sol, p, I)
         a_idx = weighted_sample(sol.rng, π_sample)
         v = 0.0
-        r̂ = child_values(sol, h)
+        r̂ = zero(σ)
         for i in eachindex(σ,A)
             q = child_value(sol, p, h, A[i])
             r̂[i] = q

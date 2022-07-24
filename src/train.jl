@@ -36,7 +36,11 @@ end
 function train_value!(sol)
     sol.exact_value && return
     buff = sol.value_buffer
-    train_net!(sol.value, buff.x, buff.y, sol.value_batch_size, sol.value_batches, deepcopy(sol.optimizer))
+    if sol.gpu
+        train_net_gpu!(sol.value, buff.x, buff.y, sol.value_batch_size, sol.value_batches, deepcopy(sol.optimizer))
+    else
+        train_net_cpu!(sol.value, buff.x, buff.y, sol.value_batch_size, sol.value_batches, deepcopy(sol.optimizer))
+    end
 end
 
 function traverse_regret!(sol, p)
@@ -48,17 +52,25 @@ end
 
 function train_regret!(sol, p)
     buff = sol.regret_buffer[p]
-    train_net!(sol.regret[p], buff.x, buff.y, sol.regret_batch_size, sol.regret_batches, deepcopy(sol.optimizer))
+    if sol.gpu
+        train_net_gpu!(sol.regret[p], buff.x, buff.y, sol.regret_batch_size, sol.regret_batches, deepcopy(sol.optimizer))
+    else
+        train_net_cpu!(sol.regret[p], buff.x, buff.y, sol.regret_batch_size, sol.regret_batches, deepcopy(sol.optimizer))
+    end
 end
 
 function train_strategy!(sol)
     buff = sol.strategy_buffer
-    train_net!(sol.strategy, buff.x, buff.y, sol.strategy_batch_size, sol.strategy_batches, deepcopy(sol.optimizer))
+    if sol.gpu
+        train_net_gpu!(sol.strategy, buff.x, buff.y, sol.strategy_batch_size, sol.strategy_batches, deepcopy(sol.optimizer))
+    else
+        train_net_cpu!(sol.strategy, buff.x, buff.y, sol.strategy_batch_size, sol.strategy_batches, deepcopy(sol.optimizer))
+    end
 end
 
 mse(X::AbstractMatrix,Y::AbstractMatrix) = sum(abs2, Y .- X)/size(X,2)
 
-function train_net!(net, x_data, y_data, batch_size, n_batches, opt)
+function train_net_cpu!(net, x_data, y_data, batch_size, n_batches, opt)
     isempty(x_data) && return nothing
     input_size = length(first(x_data))
     output_size = length(first(y_data))
@@ -83,6 +95,36 @@ function train_net!(net, x_data, y_data, batch_size, n_batches, opt)
     nothing
 end
 
+function train_net_gpu!(net_cpu, x_data, y_data, batch_size, n_batches, opt)
+    isempty(x_data) && return nothing
+    net_gpu = net_cpu |> gpu
+    input_size = length(first(x_data))
+    output_size = length(first(y_data))
+
+    _X = Matrix{Float32}(undef, input_size, batch_size)
+    _Y = Matrix{Float32}(undef, output_size, batch_size)
+    X = _X |> gpu
+    Y = _Y |> gpu
+    sample_idxs = Vector{Int}(undef, batch_size)
+    idxs = 1:length(x_data)
+    p = Flux.params(net_gpu)
+
+    for i in 1:n_batches
+        rand!(sample_idxs, idxs)
+        fillmat!(_X, x_data, sample_idxs)
+        fillmat!(_Y, y_data, sample_idxs)
+        copyto!(X, _X)
+        copyto!(Y, _Y)
+
+        gs = gradient(p) do
+            mse(net_gpu(X),Y)
+        end
+
+        Flux.update!(opt, p, gs)
+    end
+    Flux.loadmodel!(net_cpu, net_gpu)
+    nothing
+end
 
 function fillmat!(mat::AbstractMatrix, vecvec::Vector{<:AbstractVector}, idxs)
     @inbounds for i in axes(mat, 2)

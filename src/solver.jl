@@ -22,6 +22,7 @@ Base.@kwdef struct ESCHERSolver{G,V,R,S,VB,RB,SB,SP,OPT,RNG<:AbstractRNG} <: CFR
     ϵ::Float64 = 0.3
     rng::RNG = Random.default_rng()
     exact_value::Bool = false
+    gpu::Bool = false
 end
 
 function ESCHERSolver(game::Game{H,K};
