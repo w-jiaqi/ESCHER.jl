@@ -7,9 +7,9 @@ end
 
 MemBuffer{X,Y}(cap::Int) where {X,Y} = MemBuffer(X[],Y[], cap, 0)
 
-function Base.getindex(mem::MemBuffer, I...)
-    @boundscheck checkbounds(mem.x[I...])
-    @inbounds return (mem.x[I...], mem.y[I...])
+function Base.getindex(mem::MemBuffer, i)
+    @boundscheck checkbounds(mem.x, i)
+    @inbounds return (mem.x[i], mem.y[i])
 end
 
 Base.length(mem::MemBuffer) = length(mem.x)
