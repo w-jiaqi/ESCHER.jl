@@ -1,6 +1,6 @@
 function CFR.train!(sol::ESCHERSolver, T::Integer; show_progress::Bool=true, cb=()->())
     prog = Progress(T; enabled=show_progress)
-    for t ∈ 1:T
+    for t ∈ 1:(T+1)
         initialize!.(sol.regret)
         initialize!(sol.value)
         empty!(sol.value_buffer)
@@ -26,10 +26,8 @@ Make a bunch of MC runs and train value net
 """
 function traverse_value!(sol)
     h0 = initialhist(sol.game)
-    for p ∈ 1:2
-        for i ∈ 1:sol.trajectories
-            value_traverse(sol, h0, p)
-        end
+    for i ∈ 1:sol.value_trajectories
+        value_traverse(sol, h0)
     end
 end
 
@@ -45,7 +43,7 @@ end
 
 function traverse_regret!(sol, p)
     h0 = initialhist(sol.game)
-    for _ ∈ 1:sol.trajectories
+    for _ ∈ 1:sol.regret_trajectories
         regret_traverse(sol, h0, p)
     end
 end
@@ -86,11 +84,11 @@ function train_net_cpu!(net, x_data, y_data, batch_size, n_batches, opt)
         fillmat!(X, x_data, sample_idxs)
         fillmat!(Y, y_data, sample_idxs)
 
-        gs = gradient(p) do
+        ∇ = gradient(p) do
             mse(net(X),Y)
         end
 
-        Flux.update!(opt, p, gs)
+        Flux.update!(opt, p, ∇)
     end
     nothing
 end
@@ -116,11 +114,11 @@ function train_net_gpu!(net_cpu, x_data, y_data, batch_size, n_batches, opt)
         copyto!(X, _X)
         copyto!(Y, _Y)
 
-        gs = gradient(p) do
+        ∇ = gradient(p) do
             mse(net_gpu(X),Y)
         end
 
-        Flux.update!(opt, p, gs)
+        Flux.update!(opt, p, ∇)
     end
     Flux.loadmodel!(net_cpu, net_gpu)
     nothing

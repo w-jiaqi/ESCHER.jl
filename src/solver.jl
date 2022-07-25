@@ -1,15 +1,16 @@
 struct NullInfoState <: CounterfactualRegret.AbstractInfoState end
 Base.@kwdef struct ESCHERSolver{G,V,R,S,VB,RB,SB,SP,OPT,RNG<:AbstractRNG} <: CFR.AbstractCFRSolver{Nothing,G,NullInfoState}
     game::G
-    trajectories::Int = 1_000
+    value_trajectories::Int
     value_batch_size::Int = 256
-    value_batches::Int = 100
+    value_batches::Int = 500
     value_buffer_size::Int
+    regret_trajectories::Int
     regret_batch_size::Int = 256
-    regret_batches::Int = 100
+    regret_batches::Int = 500
     regret_buffer_size::Int
     strategy_batch_size::Int = 256
-    strategy_batches::Int = 100
+    strategy_batches::Int = 500
     strategy_buffer_size::Int
     value::V
     regret::R
@@ -29,11 +30,17 @@ function ESCHERSolver(game::Game{H,K};
     value = nothing,
     regret = nothing,
     strategy = nothing,
+    value_trajectories = nothing,
+    regret_trajectories = nothing,
+    trajectories = 1_000,
     value_buffer_size::Int = 100_000,
     regret_buffer_size::Int = 100_000,
     strategy_buffer_size::Int = 100_000,
     kwargs...
     ) where {H,K}
+
+    value_trajectories = isnothing(value_trajectories) ? trajectories : value_trajectories
+    regret_trajectories = isnothing(regret_trajectories) ? trajectories : regret_trajectories
 
     h0 = initialhist(game)
     I0 = vectorized_info(game,infokey(game,h0))
@@ -92,7 +99,9 @@ function ESCHERSolver(game::Game{H,K};
         game, value, regret, strategy,
         sample_policy,
         value_buffer_size,
+        value_trajectories,
         regret_buffer_size,
+        regret_trajectories,
         strategy_buffer_size,
         value_buffer,
         regret_buffer, strategy_buffer, kwargs...)
