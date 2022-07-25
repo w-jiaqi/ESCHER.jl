@@ -120,7 +120,7 @@ function training_run(net, mem::MemBuffer, bs, n_b, opt; show_progress::Bool = t
     return TrainingRun(loss, ll)
 end
 
-Base.getindex(t::TrainingRun, I...) = t.loss[I...]
+Base.getindex(t::TrainingRun, i) = t.loss[i]
 
 @recipe function f(t::TrainingRun)
     @series begin

@@ -1,8 +1,12 @@
 @testset "smoke" begin
     game = Kuhn()
     sol = ESCHERSolver(game)
-    train!(sol, 10)
+    cb = ESCHER.ExploitabilityCallback(sol)
+    train!(sol, 10; cb=cb)
+
     vb = sol.value_buffer
+    @test (vb[1] isa Tuple) && length(vb[1]) == 2
+    @test_throws BoundsError vb[9_000_000]
     @test length(vb.x) == length(vb.y) == length(vb)
     @test length(vb) > 0
 
@@ -18,4 +22,8 @@
 
     h0 = initialhist(game)
     @test ESCHER.value(sol, 1, vectorized_hist(game, h0)) isa Number
+
+    ## GPU
+    sol = ESCHERSolver(game; gpu=true)
+    train!(sol, 10)
 end

@@ -21,12 +21,3 @@ function exact_value(sol::ESCHERSolver, h)
         return v
     end
 end
-
-function exact_action_values(sol::ESCHERSolver, h)
-    A = actions(sol.game, h)
-    q = zeros(length(A))
-    for i in eachindex(A)
-        q[i] = exact_value(sol, next_hist(sol.game, h, A[i]))
-    end
-    return q
-end
