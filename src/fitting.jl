@@ -14,8 +14,8 @@ function train_net_tracked!(
     loss_hist = Vector{Float64}(undef, n_batches)
     X_tot = Matrix{Float32}(undef, input_size, length(x_data))
     Y_tot = Matrix{Float32}(undef, output_size, length(y_data))
-    fillmat!(X_tot, x_data, 1:length(x_data))
-    fillmat!(Y_tot, y_data, 1:length(y_data))
+    fillmat!(X_tot, x_data, eachindex(x_data))
+    fillmat!(Y_tot, y_data, eachindex(y_data))
 
     X = Matrix{Float32}(undef, input_size, batch_size)
     Y = Matrix{Float32}(undef, output_size, batch_size)
@@ -132,20 +132,26 @@ function optimality_distance(net, x_data, y_data)
     X_tot = Matrix{Float32}(undef, input_size, length(x_data))
     Y_tot = Matrix{Float32}(undef, output_size, length(y_data))
 
-    fillmat!(X_tot, x_data, 1:length(x_data))
-    fillmat!(Y_tot, y_data, 1:length(y_data))
+    fillmat!(X_tot, x_data, eachindex(x_data))
+    fillmat!(Y_tot, y_data, eachindex(y_data))
 
     l = mse(net(X_tot), Y_tot)
     l_min = lower_limit_loss(x_data, y_data)
 
-    if iszero(l_min)
-        return l
-    else
-        return (l - l_min) / l_min
-    end
+    return iszero(l_min) ? l : (l - l_min) / l_min
+end
+
+function optimality_distance_recur(net, x_data, y_data)
+    isempty(x_data) && return 0.0
+
+    l = recur_batch_mse(net, x_data, y_data)
+    l_min = lower_limit_loss(x_data, y_data)
+
+    return iszero(l_min) ? l : (l - l_min) / l_min
 end
 
 optimality_distance(net, mem::MemBuffer) = optimality_distance(net, mem.x, mem.y)
+optimality_distance_recur(net, mem::MemBuffer) = optimality_distance_recur(net, mem.x, mem.y)
 
 struct TrainingRun
     loss::Vector{Float64}
