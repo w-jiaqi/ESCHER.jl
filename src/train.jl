@@ -31,14 +31,25 @@ function traverse_value!(sol)
     end
 end
 
-function train_value!(sol)
-    sol.exact_value && return
-    buff = sol.value_buffer
-    if sol.gpu
-        train_net_gpu!(sol.value, buff.x, buff.y, sol.value_batch_size, sol.value_batches, deepcopy(sol.optimizer))
+function hist_train_func(sol)
+    return if sol.gpu
+        sol.variable_size_hist ? train_varsize_net_gpu! : train_net_gpu!
     else
-        train_net_cpu!(sol.value, buff.x, buff.y, sol.value_batch_size, sol.value_batches, deepcopy(sol.optimizer))
+        sol.variable_size_hist ? train_varsize_net_cpu! : train_net_cpu!
     end
+end
+
+function info_train_func(sol)
+    return if sol.gpu
+        sol.variable_size_info ? train_varsize_net_gpu! : train_net_gpu!
+    else
+        sol.variable_size_info ? train_varsize_net_cpu! : train_net_cpu!
+    end
+end
+
+function train_value!(sol)
+    buff = sol.value_buffer
+    hist_train_func(sol)(sol.value, buff.x, buff.y, sol.value_batch_size, sol.value_batches, deepcopy(sol.optimizer))
 end
 
 function traverse_regret!(sol, p)
@@ -50,20 +61,12 @@ end
 
 function train_regret!(sol, p)
     buff = sol.regret_buffer[p]
-    if sol.gpu
-        train_net_gpu!(sol.regret[p], buff.x, buff.y, sol.regret_batch_size, sol.regret_batches, deepcopy(sol.optimizer))
-    else
-        train_net_cpu!(sol.regret[p], buff.x, buff.y, sol.regret_batch_size, sol.regret_batches, deepcopy(sol.optimizer))
-    end
+    info_train_func(sol)(sol.regret[p], buff.x, buff.y, sol.regret_batch_size, sol.regret_batches, deepcopy(sol.optimizer))
 end
 
 function train_strategy!(sol)
     buff = sol.strategy_buffer
-    if sol.gpu
-        train_net_gpu!(sol.strategy, buff.x, buff.y, sol.strategy_batch_size, sol.strategy_batches, deepcopy(sol.optimizer))
-    else
-        train_net_cpu!(sol.strategy, buff.x, buff.y, sol.strategy_batch_size, sol.strategy_batches, deepcopy(sol.optimizer))
-    end
+    info_train_func(sol)(sol.strategy, buff.x, buff.y, sol.strategy_batch_size, sol.strategy_batches, deepcopy(sol.optimizer))
 end
 
 mse(X::AbstractMatrix,Y::AbstractMatrix) = sum(abs2, Y .- X)/size(X,2)
@@ -76,7 +79,7 @@ function train_net_cpu!(net, x_data, y_data, batch_size, n_batches, opt)
     X = Matrix{Float32}(undef, input_size, batch_size)
     Y = Matrix{Float32}(undef, output_size, batch_size)
     sample_idxs = Vector{Int}(undef, batch_size)
-    idxs = 1:length(x_data)
+    idxs = eachindex(x_data, y_data)
     p = Flux.params(net)
 
     for i in 1:n_batches
@@ -104,7 +107,7 @@ function train_net_gpu!(net_cpu, x_data, y_data, batch_size, n_batches, opt)
     X = _X |> gpu
     Y = _Y |> gpu
     sample_idxs = Vector{Int}(undef, batch_size)
-    idxs = 1:length(x_data)
+    idxs = eachindex(x_data, y_data)
     p = Flux.params(net_gpu)
 
     for i in 1:n_batches

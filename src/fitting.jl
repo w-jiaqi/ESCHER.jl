@@ -20,7 +20,7 @@ function train_net_tracked!(
     X = Matrix{Float32}(undef, input_size, batch_size)
     Y = Matrix{Float32}(undef, output_size, batch_size)
     sample_idxs = Vector{Int}(undef, batch_size)
-    idxs = 1:length(x_data)
+    idxs = eachindex(x_data, y_data)
 
     p = Flux.params(net)
 
@@ -43,8 +43,47 @@ function train_net_tracked!(
     return loss_hist
 end
 
-function train_net_tracked!(net, mem::MemBuffer, bs, n_b, opt; show_progress::Bool = true)
-    return train_net_tracked!(net, mem.x, mem.y, bs, n_b, opt; show_progress=show_progress)
+function train_varsize_net_tracked!(
+    net,
+    x_data,
+    y_data,
+    batch_size,
+    n_batches,
+    opt;
+    show_progress::Bool = true)
+
+    isempty(x_data) && return nothing
+    loss_hist = Vector{Float64}(undef, n_batches)
+    sample_idxs = Vector{Int}(undef, batch_size)
+    idxs = eachindex(x_data, y_data)
+
+    p = Flux.params(net)
+
+    prog = Progress(n_batches; enabled=show_progress)
+    for i in 1:n_batches
+        loss_hist[i] = recur_batch_mse(net, x_data, y_data)
+
+        rand!(sample_idxs, idxs)
+        X = x_data[sample_idxs]
+        Y = y_data[sample_idxs]
+
+        gs = gradient(p) do
+            recur_batch_mse(net, X, Y)
+        end
+
+        Flux.update!(opt, p, gs)
+        next!(prog)
+    end
+
+    return loss_hist
+end
+
+function train_net_tracked!(net, mem::MemBuffer, bs, n_b, opt; recur=false, show_progress::Bool = true)
+    return if recur
+        train_varsize_net_tracked!(net, mem.x, mem.y, bs, n_b, opt; show_progress)
+    else
+        train_net_tracked!(net, mem.x, mem.y, bs, n_b, opt; show_progress)
+    end
 end
 
 mutable struct LossCache{T}
@@ -113,9 +152,13 @@ struct TrainingRun
     lower_limit::Float64
 end
 
-function training_run(net, mem::MemBuffer, bs, n_b, opt; show_progress::Bool = true, init=true)
+function training_run(net, mem::MemBuffer, bs, n_b, opt; recur=false, show_progress::Bool = true, init=true)
     init && initialize!(net)
-    loss = train_net_tracked!(net, mem.x, mem.y, bs, n_b, opt; show_progress)
+    loss = if recur
+        train_varsize_net_tracked!(net, mem.x, mem.y, bs, n_b, opt; show_progress)
+    else
+        train_net_tracked!(net, mem.x, mem.y, bs, n_b, opt; show_progress)
+    end
     ll = lower_limit_loss(mem)
     return TrainingRun(loss, ll)
 end

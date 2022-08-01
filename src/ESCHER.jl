@@ -6,6 +6,7 @@ const CFR = CounterfactualRegret
 using ProgressMeter
 using Random
 using Flux
+using StaticArrays
 
 export ESCHERSolver, TabularESCHERSolver
 
@@ -17,5 +18,6 @@ include("callback.jl")
 include("fitting.jl")
 include("value.jl")
 include("tabular.jl")
+include("recurrent.jl")
 
 end # module
