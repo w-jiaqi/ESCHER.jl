@@ -15,7 +15,7 @@ VariableInputEmbedder(tup::Tuple) = VariableInputEmbedder(RNN(tup...))
 
 function (nn::VariableInputEmbedder)(v::AbstractVector)
     Flux.reset!(nn)
-    for i in eachindex(v)[1:end-1]
+    @inbounds for i in eachindex(v)[1:end-1]
         nn.nn(tovec(v[i]))
     end
     return nn.nn(tovec(last(v)))
@@ -26,9 +26,7 @@ function recur_batch_mse(net, x_data, y_data)
     for i ∈ eachindex(x_data, y_data) # TODO: any way to speed this up?
         ŷ = net(x_data[i])
         y = tovec(y_data[i])
-        @inbounds for j ∈ eachindex(ŷ, y)
-            l += (ŷ[j] - y[j])^2
-        end
+        l += sum(abs2, ŷ .- y)
     end
     return l / length(x_data)
 end
