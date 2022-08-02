@@ -1,7 +1,7 @@
 @testset "smoke" begin
     game = Kuhn()
     sol = ESCHERSolver(game)
-    cb = ESCHER.ExploitabilityCallback(sol)
+    cb = CFR.ExploitabilityCallback(sol)
     train!(sol, 10; cb=cb)
 
     vb = sol.value_buffer

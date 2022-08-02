@@ -110,16 +110,6 @@ function child_value(sol, p, h, a)
     return isone(p) ? sol.value[h′] : -sol.value[h′]
 end
 
-function child_values(sol::TabularESCHERSolver, h)
-    A = actions(sol.game, h)
-    q = zeros(length(A))
-    for i in eachindex(A)
-        h′ = next_hist(sol.game, h, A[i])
-        q[i] = sol.value[h′]
-    end
-    return q
-end
-
 function fill_value!(sol::TabularESCHERSolver, h)
     game = sol.game
     p = player(game, h)

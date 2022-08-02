@@ -11,6 +11,8 @@ function ExploitabilityCallback(sol::ESCHERSolver, n::Int=1; p::Int=1)
     return ExploitabilityCallback(sol, e_sol, n, 0, CFR.ExploitabilityHistory())
 end
 
+CFR.ExploitabilityCallback(sol::ESCHERSolver, n::Int=1; p::Int=1) = ExploitabilityCallback(sol,n;p)
+
 function (cb::ExploitabilityCallback)()
     if iszero(rem(cb.state, cb.n))
         sol = cb.sol
@@ -49,7 +51,7 @@ function (cb::FittingCallback)()
     else
         optimality_distance(sol.value, sol.value_buffer)
     end
-    println(io, "value     : ", round(d_value, sigdigits=3))
+    println(io, "value    : ", round(d_value, sigdigits=3))
     push!(cb.value_hist, d_value)
     for p in 1:2
         d_regret = if sol.variable_size_info
