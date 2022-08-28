@@ -1,4 +1,4 @@
-function CFR.train!(sol::ESCHERSolver, T::Integer; show_progress::Bool=true, cb=()->())
+function CFR.train!(sol::ESCHERSolver, T::Int; show_progress::Bool=true, cb=()->())
     prog = Progress(T; enabled=show_progress)
     for t ∈ 1:(T+1)
         initialize!.(sol.regret)

@@ -16,8 +16,9 @@ function value_traverse(sol::ESCHERSolver, h)
 
         return v̂
     else
-        I = vectorized_info(game, infokey(game, h))
-        A = actions(game, h)
+        kI = infokey(game, h)
+        I = vectorized_info(game, kI)
+        A = actions(game, kI)
         σ = regret_match_strategy(sol, p, I)
         a_idx = weighted_sample(sol.rng, σ)
         h′ = next_hist(game, h, A[a_idx])
@@ -42,8 +43,9 @@ function regret_traverse(sol::ESCHERSolver, h, p)
         return regret_traverse(sol, h′, p)
     end
 
-    A = actions(game, h)
-    I = vectorized_info(game, infokey(game, h))
+    kI = infokey(game, h)
+    A = actions(game, kI)
+    I = vectorized_info(game, kI)
 
     if current_player == p
         π_sample = sol.sample_policy(I)

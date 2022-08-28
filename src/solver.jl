@@ -1,5 +1,4 @@
-struct NullInfoState <: CounterfactualRegret.AbstractInfoState end
-Base.@kwdef struct ESCHERSolver{G,V,R,S,VB,RB,SB,SP,OPT,RNG<:AbstractRNG} <: CFR.AbstractCFRSolver{Nothing,G,NullInfoState}
+Base.@kwdef struct ESCHERSolver{G,V,R,S,VB,RB,SB,SP,OPT,RNG<:AbstractRNG} <: CFR.AbstractCFRSolver{Nothing,G}
     game::G
     value_trajectories::Int
     value_batch_size::Int = 256

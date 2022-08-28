@@ -11,9 +11,10 @@ function exact_value(sol::ESCHERSolver, h)
         end
         return v/length(A)
     else
-        I = vectorized_info(game, infokey(game, h))
+        kI = infokey(game, h)
+        I = vectorized_info(game, kI)
         σ = regret_match_strategy(sol, p, I)
-        A = actions(game, h)
+        A = actions(game, kI)
         v = 0.0
         for i in eachindex(σ, A)
             v += σ[i]*exact_value(sol, next_hist(game, h, A[i]))

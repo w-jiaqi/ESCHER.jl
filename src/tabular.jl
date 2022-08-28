@@ -8,7 +8,7 @@ struct UniformSampler end
 
 (::UniformSampler)(::Any, n::Integer) = CFR.FillVec(inv(n), n)
 
-struct TabularESCHERSolver{K,G,SP,H,RNG} <: CFR.AbstractCFRSolver{K, G, TabularInfoState}
+struct TabularESCHERSolver{K,G,SP,H,RNG} <: CFR.AbstractCFRSolver{K, G}
     game::G
     sample_policy::SP
     I::Dict{K, TabularInfoState}
@@ -28,8 +28,8 @@ end
 
 function CFR.strategy(sol::TabularESCHERSolver{K}, I::K) where K
     infostate = get(sol.I, I, nothing)
-    if isnothing(infostate) # FIXME: terrible idea - assumes constant size action space
-        L = length(first(values(sol.I)).strategy)
+    if isnothing(infostate)
+        L = length(actions(sol.game, I))
         return fill(inv(L), L)
     else
         σ = copy(infostate.strategy)
@@ -77,7 +77,8 @@ function traverse(sol::TabularESCHERSolver, h, p)
         return traverse(sol, h′, p)
     end
 
-    A = actions(game, h)
+    kI = infokey(game, h)
+    A = actions(game, kI)
     I = infostate(sol, h, length(A))
 
     if current_player == p
@@ -127,10 +128,10 @@ function fill_value!(sol::TabularESCHERSolver, h)
         sol.value[h] = u
         return u
     else
-        CFR.infoset(sol, h)
         I = infokey(game, h)
+        CFR.infoset(sol, I)
         σ = regret_match_strategy(sol, p, I)
-        A = actions(game, h)
+        A = actions(game, I)
         v = 0.0
         for i in eachindex(σ, A)
             v += σ[i]*fill_value!(sol, next_hist(game, h, A[i]))
