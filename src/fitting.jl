@@ -21,8 +21,7 @@ function train_net_tracked!(
     Y = Matrix{Float32}(undef, output_size, batch_size)
     sample_idxs = Vector{Int}(undef, batch_size)
     idxs = eachindex(x_data, y_data)
-
-    p = Flux.params(net)
+    opt = Flux.setup(opt, net)
 
     prog = Progress(n_batches; enabled=show_progress)
     for i in 1:n_batches
@@ -32,11 +31,11 @@ function train_net_tracked!(
         fillmat!(X, x_data, sample_idxs)
         fillmat!(Y, y_data, sample_idxs)
 
-        gs = gradient(p) do
-            mse(net(X),Y)
+        loss, ∇ = Flux.withgradient(net) do model
+            mse(model(X),Y)
         end
 
-        Flux.update!(opt, p, gs)
+        Flux.update!(opt, net, ∇[1])
         next!(prog)
     end
 
@@ -56,8 +55,7 @@ function train_varsize_net_tracked!(
     loss_hist = Vector{Float64}(undef, n_batches)
     sample_idxs = Vector{Int}(undef, batch_size)
     idxs = eachindex(x_data, y_data)
-
-    p = Flux.params(net)
+    opt = Flux.setup(opt, net)
 
     prog = Progress(n_batches; enabled=show_progress)
     for i in 1:n_batches
@@ -67,11 +65,11 @@ function train_varsize_net_tracked!(
         X = x_data[sample_idxs]
         Y = y_data[sample_idxs]
 
-        gs = gradient(p) do
-            recur_batch_mse(net, X, Y)
+        loss, ∇ = Flux.withgradient(net) do model
+            mse(model(X),Y)
         end
 
-        Flux.update!(opt, p, gs)
+        Flux.update!(opt, net, ∇[1])
         next!(prog)
     end
 

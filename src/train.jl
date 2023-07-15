@@ -80,18 +80,18 @@ function train_net_cpu!(net, x_data, y_data, batch_size, n_batches, opt)
     Y = Matrix{Float32}(undef, output_size, batch_size)
     sample_idxs = Vector{Int}(undef, batch_size)
     idxs = eachindex(x_data, y_data)
-    p = Flux.params(net)
+    opt = Flux.setup(opt, net)
 
     for i in 1:n_batches
         rand!(sample_idxs, idxs)
         fillmat!(X, x_data, sample_idxs)
         fillmat!(Y, y_data, sample_idxs)
 
-        ∇ = gradient(p) do
-            mse(net(X),Y)
+        loss, ∇ = Flux.withgradient(net) do model
+            mse(model(X),Y)
         end
 
-        Flux.update!(opt, p, ∇)
+        Flux.update!(opt, net, ∇[1])
     end
     nothing
 end
@@ -108,7 +108,7 @@ function train_net_gpu!(net_cpu, x_data, y_data, batch_size, n_batches, opt)
     Y = _Y |> gpu
     sample_idxs = Vector{Int}(undef, batch_size)
     idxs = eachindex(x_data, y_data)
-    p = Flux.params(net_gpu)
+    opt = Flux.setup(opt, net_gpu)
 
     for i in 1:n_batches
         rand!(sample_idxs, idxs)
@@ -117,11 +117,11 @@ function train_net_gpu!(net_cpu, x_data, y_data, batch_size, n_batches, opt)
         copyto!(X, _X)
         copyto!(Y, _Y)
 
-        ∇ = gradient(p) do
-            mse(net_gpu(X),Y)
+        loss, ∇ = Flux.withgradient(net_gpu) do model
+            mse(model(X),Y)
         end
 
-        Flux.update!(opt, p, ∇)
+        Flux.update!(opt, net_gpu, ∇[1])
     end
     Flux.loadmodel!(net_cpu, net_gpu)
     nothing

@@ -1,6 +1,7 @@
 module ESCHER
 
 using CounterfactualRegret
+using CUDA
 using RecipesBase
 const CFR = CounterfactualRegret
 using ProgressMeter

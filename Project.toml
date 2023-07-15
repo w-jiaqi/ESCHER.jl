@@ -4,6 +4,7 @@ authors = ["WhiffleFish <tylertronics@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 CounterfactualRegret = "9fefe0b7-a0d5-4e12-a8ed-3472cccdfc49"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
@@ -13,7 +14,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 CounterfactualRegret = "0.5"
-Flux = "0.13"
+Flux = "0.14"
 ProgressMeter = "1"
 RecipesBase = "1"
 StaticArrays = "1"
